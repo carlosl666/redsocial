@@ -1,0 +1,61 @@
+version: "3.9"
+services:
+  postgres15:
+    container_name: postgres15
+    build: servicesData/postgresdb/
+    ports:
+      - "5532:5432"
+    environment:
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - data-postgres15:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - spring
+  ms-usuarios-api:
+    container_name: ms-usuarios-api
+    image: carlosl666/usuarios:latest
+#    build:
+#      context: ./
+#      dockerfile: ./ms-usuarios-api/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      PORT: 8002
+      DB_HOST: postgres15:5432
+      DB_DATABASE: dbms_proyecto
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123456
+      MS_PUBLIC_API: ms-publicaciones-api:8003/redsocial/publicacion/v1
+    networks:
+      - spring
+    depends_on:
+      - postgres15
+    restart: always
+  ms-publicaciones-api:
+    container_name: ms-publicaciones-api
+    image: carlosl666/publicaciones:latest
+#    build:
+#      context: ./
+#      dockerfile: ./ms-publicaciones-api/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      PORT: 8003
+      DB_HOST: postgres15:5432
+      DB_DATABASE: dbms_publicaciones
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123456
+      MS_USER_API: ms-usuarios-api:8002/redsocial/usuario/v1
+    networks:
+      - spring
+    depends_on:
+      - postgres15
+      - ms-usuarios-api
+    restart: always
+volumes:
+  data-postgres15:
+    name: data-postgres15
+networks:
+  spring:
+    name: spring
